@@ -706,8 +706,9 @@ function setTheme(t){
 /* ── SETTINGS MODAL ── */
 /* ── GOOGLE SHEET SYNC ── */
 let pushTimer=null,syncPoll=null,lastPushAt=0,pendingPush=false;
-const DEFAULT_SYNC_URL='PASTE_YOUR_EXEC_URL_HERE'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
-function syncCfg(){return{url:localStorage.getItem('jp2_sync_url')||DEFAULT_SYNC_URL,token:localStorage.getItem('jp2_sync_token')||''};}
+const DEFAULT_SYNC_URL='https://script.google.com/macros/s/AKfycbw054qIcABR9cMTr3jgs9savDBlITmViDIsR0VO1RsGTZc44ULGEgFuE8nzQ6YiOYktCg/exec'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
+const DEFAULT_SYNC_TOKEN='TMPreoderJapan2n'; // <<< แก้ตรงนี้: ใส่ Token เดียวกับใน Apps Script (ฝังไว้เพื่อให้เปิดครั้งแรก sync เลย)
+function syncCfg(){return{url:localStorage.getItem('jp2_sync_url')||DEFAULT_SYNC_URL,token:localStorage.getItem('jp2_sync_token')||DEFAULT_SYNC_TOKEN};}
 function syncEnabled(){const c=syncCfg();return !!(c.url&&c.token);}
 function setSyncIndicator(state){
   const el=document.getElementById('sync-ind');if(!el)return;
@@ -870,7 +871,7 @@ function openSync(){
     </div>
     <div class="set-section" style="margin-top:2px">เชื่อมต่อ Google Sheet</div>
     <label class="set-label">Web App URL</label>
-    <div class="input-icon" style="margin-bottom:10px"><i class="ti ti-link"></i><input class="form-input" id="set-sync-url" placeholder="https://script.google.com/.../exec" value="${(sc.url||'').replace(/"/g,'&quot;')}"></div>
+    <div class="input-icon" style="margin-bottom:10px"><i class="ti ti-link"></i><input class="form-input" id="set-sync-url" placeholder="https://script.google.com/.../exec" value="${(sc.url||'').replace(/"/g,'&quot;')} readonly"></div>
     <label class="set-label">Token</label>
     <div class="input-icon"><i class="ti ti-key"></i><input class="form-input" id="set-sync-token" placeholder="รหัสลับที่ตั้งไว้ใน Apps Script" value="${(sc.token||'').replace(/"/g,'&quot;')}"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
