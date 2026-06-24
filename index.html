@@ -705,7 +705,7 @@ function setTheme(t){
 
 /* ── SETTINGS MODAL ── */
 /* ── GOOGLE SHEET SYNC ── */
-let pushTimer=null,syncPoll=null,lastPushAt=0;
+let pushTimer=null,syncPoll=null,lastPushAt=0,pendingPush=false;
 const DEFAULT_SYNC_URL='PASTE_YOUR_EXEC_URL_HERE'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
 function syncCfg(){return{url:localStorage.getItem('jp2_sync_url')||DEFAULT_SYNC_URL,token:localStorage.getItem('jp2_sync_token')||''};}
 function syncEnabled(){const c=syncCfg();return !!(c.url&&c.token);}
@@ -778,20 +778,23 @@ async function pushToSheet(){
     };
     await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:c.token,data})});
     lastPushAt=Date.now();
+    pendingPush=false;
     setSyncStatus('บันทึกขึ้น Sheet แล้ว '+new Date().toLocaleTimeString('th-TH'),'ok');
-  }catch(e){setSyncStatus('ส่งข้อมูลไม่ได้','err');}
+  }catch(e){setSyncStatus('ส่งข้อมูลไม่ได้','err');}  // คง pendingPush ไว้ กันดึงทับข้อมูลที่ยังไม่ sync
 }
 function schedulePush(){
   if(!syncEnabled())return;
+  pendingPush=true;                       // มีการแก้ข้อมูลในเครื่อง ยังไม่ขึ้น Sheet
   clearTimeout(pushTimer);
-  pushTimer=setTimeout(pushToSheet,1500);
+  pushTimer=setTimeout(pushToSheet,1200);
 }
 function startSyncPolling(){
   clearInterval(syncPoll);
   if(!syncEnabled())return;
   syncPoll=setInterval(()=>{
     if(document.getElementById('modal-root').innerHTML.trim()!=='')return; // ไม่ดึงทับระหว่างเปิด modal
-    if(Date.now()-lastPushAt<3000)return;                                   // เพิ่งพุชไป ข้ามรอบนี้
+    if(pendingPush){pushToSheet();return;}                                  // มีของแก้ค้างอยู่ → push ก่อน ห้ามดึงทับ
+    if(Date.now()-lastPushAt<4000)return;                                   // เพิ่งพุชไป ข้ามรอบนี้
     const c=syncCfg();if(!c.url||!c.token)return;
     fetch(c.url+'?token='+encodeURIComponent(c.token)).then(r=>r.json()).then(d=>{if(!d.error)applyPulled(d);}).catch(()=>{});
   },12000);
@@ -1171,7 +1174,7 @@ function delProduct(id){
 }
 function promptImg(id){
   const url=prompt('วาง URL รูปภาพ:');
-  if(url&&url.trim()){const p=products.find(x=>x.id===id);if(p){p.img=url.trim();save();render();}}
+  if(url&&url.trim()){const p=products.find(x=>String(x.id)===String(id));if(p){p.img=url.trim();save();render();}}
 }
 function viewImg(src){
   const lb=document.getElementById('lightbox-root');
