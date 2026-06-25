@@ -701,7 +701,7 @@ function deleteCustomCat(key){
     schedulePush();
     if(currentCat===key)currentCat='';
     buildSidebarNav();render();
-    toast('ลบหมวด "'+lbl+'" แล้ว',{actionLabel:'เลิกทำ',duration:3500,onAction:()=>{
+    toast('ลบหมวด "'+lbl+'" แล้ว',{actionLabel:'เลิกทำ',duration:3000,onAction:()=>{
       const cur=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
       cur.splice(Math.min(idx,cur.length),0,removed);
       localStorage.setItem('jp2_custom_cats',JSON.stringify(cur));
@@ -761,8 +761,8 @@ function setTheme(t){
 /* ── SETTINGS MODAL ── */
 /* ── GOOGLE SHEET SYNC ── */
 let pushTimer=null,syncPoll=null,lastPushAt=0,pendingPush=false;
-const DEFAULT_SYNC_URL='PASTE_YOUR_EXEC_URL_HERE'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
-const DEFAULT_SYNC_TOKEN='PASTE_YOUR_TOKEN_HERE'; // <<< แก้ตรงนี้: ใส่ Token เดียวกับใน Apps Script (ฝังไว้เพื่อให้เปิดครั้งแรก sync เลย)
+const DEFAULT_SYNC_URL='https://script.google.com/macros/s/AKfycbw054qIcABR9cMTr3jgs9savDBlITmViDIsR0VO1RsGTZc44ULGEgFuE8nzQ6YiOYktCg/exec'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
+const DEFAULT_SYNC_TOKEN='TMPreoderJapan2n'; // <<< แก้ตรงนี้: ใส่ Token เดียวกับใน Apps Script (ฝังไว้เพื่อให้เปิดครั้งแรก sync เลย)
 function syncCfg(){return{url:localStorage.getItem('jp2_sync_url')||DEFAULT_SYNC_URL,token:localStorage.getItem('jp2_sync_token')||DEFAULT_SYNC_TOKEN};}
 function syncEnabled(){const c=syncCfg();return !!(c.url&&c.token);}
 function setSyncIndicator(state){
@@ -1306,7 +1306,7 @@ function delProduct(id){
     const idx=products.findIndex(p=>String(p.id)===String(id));if(idx<0)return;
     const removed=products[idx];
     products.splice(idx,1);save();render();buildSidebarNav();closeModal();
-    toast('ลบสินค้าแล้ว',{actionLabel:'เลิกทำ',duration:3500,onAction:()=>{
+    toast('ลบสินค้าแล้ว',{actionLabel:'เลิกทำ',duration:3000,onAction:()=>{
       products.splice(Math.min(idx,products.length),0,removed);save();render();buildSidebarNav();
     }});
   },{okLabel:'ลบ',danger:true});
@@ -1516,7 +1516,7 @@ function saveProduct(id){
 function toast(msg,opts){
   opts=opts||{};
   const kind=opts.kind||'';
-  const duration=opts.duration||(opts.actionLabel?3500:2000);
+  const duration=opts.duration||(opts.actionLabel?3000:1500);
   let box=document.getElementById('toasts');
   if(!box){box=document.createElement('div');box.id='toasts';document.body.appendChild(box);}
   const t=document.createElement('div');t.className='toast'+(kind?' '+kind:'');
@@ -1601,7 +1601,7 @@ function openAddOrder(productId){
       <label>ชื่อลูกค้า</label>
       <div class="input-icon">
         <i class="ti ti-user"></i>
-        <input class="form-input" id="o-name" placeholder="เช่น คุณแนน">
+        <input class="form-input" id="o-name" placeholder="เช่น คุณมิงค์">
       </div>
     </div>
     <div class="form-row">
@@ -1942,7 +1942,7 @@ function deleteOrder(orderId){
     const removed=orders[idx];
     orders.splice(idx,1);
     save();closeModal();renderOrders();buildSidebarNav();render();
-    toast('ลบออเดอร์แล้ว',{actionLabel:'เลิกทำ',duration:3500,onAction:()=>{
+    toast('ลบออเดอร์แล้ว',{actionLabel:'เลิกทำ',duration:3000,onAction:()=>{
       orders.splice(Math.min(idx,orders.length),0,removed);
       save();renderOrders();buildSidebarNav();render();
     }});
