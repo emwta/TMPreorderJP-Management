@@ -235,7 +235,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .m-actions{display:flex;gap:2px}
 
 /* ── ORDERS LIST ── */
-.orders-list{padding:0 1.25rem 1.25rem;display:flex;flex-direction:column;gap:10px}
+.orders-list{padding:0 1.25rem 1.25rem; padding-top: 2px; display:flex;flex-direction:column;gap:10px}
 .collapse-head{font-size:13px;font-weight:600;color:var(--accent-text);margin-bottom:10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;padding:8px 0}
 .collapse-head:hover{color:var(--accent)}
 .collapse-arrow{margin-left:auto;transition:transform .2s;font-size:16px}
@@ -682,7 +682,7 @@ function deleteCustomCat(key){
     schedulePush();
     if(currentCat===key)currentCat='';
     buildSidebarNav();render();
-    toast('ลบหมวด "'+lbl+'" แล้ว',{actionLabel:'เลิกทำ',duration:4000,onAction:()=>{
+    toast('ลบหมวด "'+lbl+'" แล้ว',{actionLabel:'เลิกทำ',duration:3500,onAction:()=>{
       const cur=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
       cur.splice(Math.min(idx,cur.length),0,removed);
       localStorage.setItem('jp2_custom_cats',JSON.stringify(cur));
@@ -831,7 +831,7 @@ function startSyncPolling(){
   syncPoll=setInterval(()=>{
     if(document.getElementById('modal-root').innerHTML.trim()!=='')return; // ไม่ดึงทับระหว่างเปิด modal
     if(pendingPush){pushToSheet();return;}                                  // มีของแก้ค้างอยู่ → push ก่อน ห้ามดึงทับ
-    if(Date.now()-lastPushAt<4000)return;                                   // เพิ่งพุชไป ข้ามรอบนี้
+    if(Date.now()-lastPushAt<3000)return;                                   // เพิ่งพุชไป ข้ามรอบนี้
     const c=syncCfg();if(!c.url||!c.token)return;
     fetch(c.url+'?token='+encodeURIComponent(c.token)).then(r=>r.json()).then(d=>{if(!d.error)applyPulled(d);}).catch(()=>{});
   },12000);
@@ -1216,11 +1216,11 @@ function renderSidebar(){
 function delProduct(id){
   const p0=products.find(p=>String(p.id)===String(id));if(!p0)return;
   const nm=p0.name||'สินค้านี้';
-  confirmDialog('ลบ "'+nm+'" ?\nการลบจะมีผลกับทุกเครื่องที่ซิงค์',()=>{
+  confirmDialog('ลบสินค้า "'+nm+'" ?\nการลบจะมีผลหลังจากบันทึกข้อมูล',()=>{
     const idx=products.findIndex(p=>String(p.id)===String(id));if(idx<0)return;
     const removed=products[idx];
     products.splice(idx,1);save();render();buildSidebarNav();closeModal();
-    toast('ลบสินค้าแล้ว',{actionLabel:'เลิกทำ',duration:4000,onAction:()=>{
+    toast('ลบสินค้าแล้ว',{actionLabel:'เลิกทำ',duration:3500,onAction:()=>{
       products.splice(Math.min(idx,products.length),0,removed);save();render();buildSidebarNav();
     }});
   },{okLabel:'ลบ',danger:true});
@@ -1430,7 +1430,7 @@ function saveProduct(id){
 function toast(msg,opts){
   opts=opts||{};
   const kind=opts.kind||'';
-  const duration=opts.duration||(opts.actionLabel?4000:2000);
+  const duration=opts.duration||(opts.actionLabel?3500:2000);
   let box=document.getElementById('toasts');
   if(!box){box=document.createElement('div');box.id='toasts';document.body.appendChild(box);}
   const t=document.createElement('div');t.className='toast'+(kind?' '+kind:'');
@@ -1855,7 +1855,7 @@ function deleteOrder(orderId){
     const removed=orders[idx];
     orders.splice(idx,1);
     save();closeModal();renderOrders();buildSidebarNav();render();
-    toast('ลบออเดอร์แล้ว',{actionLabel:'เลิกทำ',duration:4000,onAction:()=>{
+    toast('ลบออเดอร์แล้ว',{actionLabel:'เลิกทำ',duration:3500,onAction:()=>{
       orders.splice(Math.min(idx,orders.length),0,removed);
       save();renderOrders();buildSidebarNav();render();
     }});
