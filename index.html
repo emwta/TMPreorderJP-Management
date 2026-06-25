@@ -114,7 +114,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 /* ── STATS ── colorful cards */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 1.25rem .875rem;flex-shrink:0}
 .stats-row-7{grid-template-columns:repeat(7,1fr)}
-#orders-stats.hidden{display:none}
+#orders-stats{overflow:hidden;transition:max-height .34s cubic-bezier(.4,0,.2,1),opacity .26s ease,padding .34s ease}
+#orders-stats.hidden{max-height:0;opacity:0;padding-bottom:0;pointer-events:none}
 .stats-row-4{grid-template-columns:repeat(4,1fr)}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r16);padding:.875rem 1rem;position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--accent))}
@@ -562,7 +563,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
             <option value="deposit">มัดจำ</option>
             <option value="paid">จ่ายแล้ว</option>
           </select>
-          <button class="btn" id="stats-toggle" onclick="toggleOrdersStats()" title="ซ่อนสรุป" style="padding:0 10px"><i class="ti ti-eye"></i></button>
+          <button class="btn" id="stats-toggle" onclick="toggleOrdersStats()" title="ซ่อนสรุป" style="padding:0 10px"><i class="ti ti-id-badge-off"></i></button>
         </div>
       </div>
 
@@ -1108,8 +1109,9 @@ function setView(view){
     document.getElementById('orders-stats').classList.toggle('stats-row-7',!isPur);
     document.getElementById('orders-stats').classList.toggle('stats-row-4',isPur);
     const sh=localStorage.getItem('jp2_ostats_hidden')==='1';
-    document.getElementById('orders-stats').classList.toggle('hidden',sh);
-    const stIc=document.querySelector('#stats-toggle i');if(stIc)stIc.className='ti '+(sh?'ti-eye-off':'ti-eye');
+    const osEl=document.getElementById('orders-stats');
+    osEl.classList.toggle('hidden',sh);osEl.style.maxHeight=sh?'0px':'';
+    const stIc=document.querySelector('#stats-toggle i');if(stIc)stIc.className='ti '+(sh?'ti-play-card-q':'ti-id-badge-off');
     const stBtn=document.getElementById('stats-toggle');if(stBtn)stBtn.title=sh?'แสดงสรุป':'ซ่อนสรุป';
     renderOrders();
     applyCollapseState();
@@ -1158,10 +1160,19 @@ function onSearchInput(){
 }
 function toggleOrdersStats(){
   const os=document.getElementById('orders-stats');
-  const hidden=os.classList.toggle('hidden');
-  localStorage.setItem('jp2_ostats_hidden',hidden?'1':'0');
-  const ic=document.querySelector('#stats-toggle i');if(ic)ic.className='ti '+(hidden?'ti-eye-off':'ti-eye');
-  const btn=document.getElementById('stats-toggle');if(btn)btn.title=hidden?'แสดงสรุป':'ซ่อนสรุป';
+  const willHide=!os.classList.contains('hidden');
+  if(willHide){
+    os.style.maxHeight=os.scrollHeight+'px';
+    requestAnimationFrame(()=>{os.classList.add('hidden');os.style.maxHeight='0px';});
+  }else{
+    os.classList.remove('hidden');
+    os.style.maxHeight=os.scrollHeight+'px';
+    os.addEventListener('transitionend',function te(e){if(e.propertyName==='max-height'){os.style.maxHeight='';os.removeEventListener('transitionend',te);}});
+  }
+  localStorage.setItem('jp2_ostats_hidden',willHide?'1':'0');
+  const ic=document.querySelector('#stats-toggle i');if(ic)ic.className='ti '+(willHide?'ti-play-card-q':'ti-id-badge-off');
+  const btn=document.getElementById('stats-toggle');if(btn)btn.title=willHide?'แสดงสรุป':'ซ่อนสรุป';
+  haptic();
 }
 
 function orderCountFor(productId){return orders.filter(o=>o.productId===productId).length;}
@@ -1940,6 +1951,7 @@ function deleteOrder(orderId){
 
 applyTheme();buildSidebarNav();render();
 if(syncEnabled()){setSyncIndicator('syncing');pullFromSheet();startSyncPolling();}else{setSyncIndicator('off');}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(reg=>{console.log('SW registered')}).catch(e=>{console.log('SW error:',e)});}
 </script>
 </body>
 </html>
