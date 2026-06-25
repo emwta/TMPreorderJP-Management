@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Japan Pre-Order</title>
+<title>TM Japan Pre-Order</title>
 <meta name="theme-color" content="#0c0f20">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -393,6 +393,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
   .logo .logo-text{display:none}
   .topnav-right .btn{display:none}
 }
+#toasts{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;z-index:999;padding:0 12px}
+.toast{pointer-events:auto;min-width:240px;max-width:420px;width:max-content;background:var(--surface2);border:1px solid var(--border);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow-md);position:relative;overflow:hidden;animation:t-in .25s cubic-bezier(.2,.8,.2,1)}
+.toast.out{animation:t-out .2s ease forwards}
+@keyframes t-in{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes t-out{to{transform:translateY(20px);opacity:0}}
+.toast>i{font-size:19px;flex-shrink:0;color:var(--accent-text)}
+.toast .t-msg{font-size:13px;font-weight:600;flex:1;color:var(--text)}
+.toast .t-act{background:none;border:none;color:var(--accent-text);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;padding:6px 8px;border-radius:8px;flex-shrink:0}
+.toast .t-act:active{background:var(--accent-light)}
+.toast .t-bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);width:100%;transform-origin:left}
+.toast.ok>i{color:var(--green)}.toast.ok .t-bar{background:var(--green)}
+.toast.err>i{color:var(--red)}.toast.err .t-bar{background:var(--red)}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:340px;width:90%;box-shadow:var(--shadow-md)}
+.confirm-msg{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:18px;white-space:pre-line}
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+/* tap feedback */
+.btn,.set-grad-btn,.pbuy,.pay-btn,.ch-opt,.size-opt,.theme-opt,.pdone-undo{transition:transform .09s ease,opacity .15s,background .15s,border-color .15s,box-shadow .18s,color .15s}
+.btn:active,.set-grad-btn:active,.pbuy:active,.pay-btn:active,.ch-opt:active,.size-opt:active,.theme-opt:active,.pdone-undo:active{transform:scale(.96)}
+.set-grad-btn,.pbuy,.btn.primary{position:relative;overflow:hidden}
+.rpl{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:rpl .5s ease-out;pointer-events:none}
+@keyframes rpl{to{transform:scale(2.6);opacity:0}}
+.hap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hap-grid .theme-opt{padding:11px 4px;font-size:12.5px;gap:5px}
+.hap-grid .theme-opt i{font-size:19px}
 </style>
 </head>
 <body>
@@ -645,14 +669,26 @@ function saveCustomCat(key,label,hasSizes,icon){
   }
 }
 function deleteCustomCat(key){
+  const custom0=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
+  if(!custom0.find(c=>c.key===key))return;
   const cats=getAllCats();const lbl=cats[key]?cats[key].label:key;
   const cnt=products.filter(p=>p.cat===key).length;
-  if(!confirm(`ลบหมวด "${lbl}"?${cnt>0?'\nมีสินค้า '+cnt+' รายการในหมวดนี้':''}`))return;
-  const custom=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
-  localStorage.setItem('jp2_custom_cats',JSON.stringify(custom.filter(c=>c.key!==key)));
-  schedulePush();
-  if(currentCat===key)currentCat='';
-  buildSidebarNav();render();
+  confirmDialog('ลบหมวด "'+lbl+'" ?'+(cnt>0?'\nมีสินค้า '+cnt+' รายการในหมวดนี้':''),()=>{
+    const custom=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
+    const idx=custom.findIndex(c=>c.key===key);if(idx<0)return;
+    const removed=custom[idx];
+    custom.splice(idx,1);
+    localStorage.setItem('jp2_custom_cats',JSON.stringify(custom));
+    schedulePush();
+    if(currentCat===key)currentCat='';
+    buildSidebarNav();render();
+    toast('ลบหมวด "'+lbl+'" แล้ว',{actionLabel:'เลิกทำ',duration:4000,onAction:()=>{
+      const cur=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
+      cur.splice(Math.min(idx,cur.length),0,removed);
+      localStorage.setItem('jp2_custom_cats',JSON.stringify(cur));
+      schedulePush();buildSidebarNav();render();
+    }});
+  },{okLabel:'ลบ',danger:true});
 }
 function getCatColorClass(cat){
   const known=['Shoes','Cosmatic','AcneStudio','Longchamp','HMM','Google'];
@@ -706,8 +742,8 @@ function setTheme(t){
 /* ── SETTINGS MODAL ── */
 /* ── GOOGLE SHEET SYNC ── */
 let pushTimer=null,syncPoll=null,lastPushAt=0,pendingPush=false;
-const DEFAULT_SYNC_URL='https://script.google.com/macros/s/AKfycbw054qIcABR9cMTr3jgs9savDBlITmViDIsR0VO1RsGTZc44ULGEgFuE8nzQ6YiOYktCg/exec'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
-const DEFAULT_SYNC_TOKEN='TMPreoderJapan2n'; // <<< แก้ตรงนี้: ใส่ Token เดียวกับใน Apps Script (ฝังไว้เพื่อให้เปิดครั้งแรก sync เลย)
+const DEFAULT_SYNC_URL='PASTE_YOUR_EXEC_URL_HERE'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
+const DEFAULT_SYNC_TOKEN='PASTE_YOUR_TOKEN_HERE'; // <<< แก้ตรงนี้: ใส่ Token เดียวกับใน Apps Script (ฝังไว้เพื่อให้เปิดครั้งแรก sync เลย)
 function syncCfg(){return{url:localStorage.getItem('jp2_sync_url')||DEFAULT_SYNC_URL,token:localStorage.getItem('jp2_sync_token')||DEFAULT_SYNC_TOKEN};}
 function syncEnabled(){const c=syncCfg();return !!(c.url&&c.token);}
 function setSyncIndicator(state){
@@ -826,7 +862,7 @@ async function saveSyncCfg(){
 
 function openSettings(){
   closeSidebar();
-  const{rate,tax}=getRates();const th=getTheme();
+  const{rate,tax}=getRates();const th=getTheme();const hap=getHaptic();
   document.getElementById('modal-root').innerHTML=`
   <div class="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -846,6 +882,12 @@ function openSettings(){
     </div>
     <div class="calc-hint" id="set-rate-preview" style="margin-top:8px"></div>
     <button class="set-grad-btn" style="margin-top:10px" onclick="saveRatesFromSettings()"><i class="ti ti-device-floppy"></i>บันทึกอัตรา &amp; คำนวณใหม่</button>
+    <div class="set-section">การสั่น (Haptic)</div>
+    <div class="hap-grid" id="set-hap">
+      <div class="theme-opt${hap===0?' sel':''}" data-ms="0" onclick="setHaptic(0)"><i class="ti ti-device-mobile-x"></i>ปิด</div>
+      <div class="theme-opt${hap===8?' sel':''}" data-ms="8" onclick="setHaptic(8)"><i class="ti ti-device-mobile-star"></i>เบา</div>
+      <div class="theme-opt${hap===15?' sel':''}" data-ms="18" onclick="setHaptic(15)"><i class="ti ti-device-mobile-vibration"></i>กลาง</div>
+    </div>
     <div class="set-section">ข้อมูล</div>
     <button class="set-row" onclick="exportOrdersCSV()">
       <span class="set-row-ic"><i class="ti ti-file-spreadsheet"></i></span>
@@ -886,8 +928,10 @@ function openSync(){
 }
 
 function exportOrdersCSV(){
-  if(!orders.length){alert('ยังไม่มีออเดอร์ให้ Export');return;}
-  if(!confirm(`Export ออเดอร์ ${orders.length} รายการเป็นไฟล์ .csv?`))return;
+  if(!orders.length){toast('ยังไม่มีออเดอร์ให้ Export',{kind:'err'});return;}
+  confirmDialog(`Export ออเดอร์ ${orders.length} รายการเป็นไฟล์ .csv?`,doExportCSV,{okLabel:'Export'});
+}
+function doExportCSV(){
   const cats=getAllCats();
   const chLabel=k=>(CHANNELS[k]?CHANNELS[k].label:k);
   const rows=[['วันที่','เวลา','ลูกค้า','สินค้า','หมวด','ช่องทาง','ไซส์','หมายเหตุ','สถานะ','ราคาขาย','มัดจำ','คงเหลือ','ซื้อของแล้ว']];
@@ -1136,7 +1180,7 @@ function renderMobileCards(list){
             <div class="m-total" style="color:${tp>0?'var(--green)':'var(--text3)'}">${tp>0?'฿'+tp.toLocaleString():'—'}</div>
           </div>
         </div>
-        <button class="btn sm primary" style="width:100%;justify-content:center;margin-top:10px" onclick="openAddOrder(${p.id})"><i class="ti ti-shopping-cart-plus"></i>เพิ่มออเดอร์ลูกค้า</button>
+        <button class="btn sm primary nohp" style="width:100%;justify-content:center;margin-top:10px" onclick="openAddOrder(${p.id})"><i class="ti ti-shopping-cart-plus"></i>เพิ่มออเดอร์ลูกค้า</button>
       </div>
     </div>`;
   }).join('');
@@ -1170,8 +1214,16 @@ function renderSidebar(){
 }
 
 function delProduct(id){
-  if(!confirm('ลบสินค้านี้?'))return;
-  products=products.filter(p=>p.id!==id);save();render();buildSidebarNav();
+  const p0=products.find(p=>String(p.id)===String(id));if(!p0)return;
+  const nm=p0.name||'สินค้านี้';
+  confirmDialog('ลบ "'+nm+'" ?\nการลบจะมีผลกับทุกเครื่องที่ซิงค์',()=>{
+    const idx=products.findIndex(p=>String(p.id)===String(id));if(idx<0)return;
+    const removed=products[idx];
+    products.splice(idx,1);save();render();buildSidebarNav();closeModal();
+    toast('ลบสินค้าแล้ว',{actionLabel:'เลิกทำ',duration:4000,onAction:()=>{
+      products.splice(Math.min(idx,products.length),0,removed);save();render();buildSidebarNav();
+    }});
+  },{okLabel:'ลบ',danger:true});
 }
 function promptImg(id){
   const url=prompt('วาง URL รูปภาพ:');
@@ -1356,11 +1408,11 @@ function previewModalImg(){
 }
 function saveProduct(id){
   const name=document.getElementById('f-name').value.trim();
-  if(!name){alert('กรุณาใส่ชื่อสินค้า');return;}
+  if(!name){toast('กรุณาใส่ชื่อสินค้า',{kind:'err'});return;}
   let cat=document.getElementById('f-cat').value;
   if(cat==='__new__'){
     const nn=document.getElementById('f-new-cat').value.trim();
-    if(!nn){alert('กรุณาใส่ชื่อหมวดหมู่');return;}
+    if(!nn){toast('กรุณาใส่ชื่อหมวดหมู่',{kind:'err'});return;}
     cat=nn.replace(/\s+/g,'_');saveCustomCat(cat,nn,false,(document.getElementById('f-new-cat-icon')||{}).value||'ti-tag');buildSidebarNav();
   }
   const jpy=parseFloat(document.getElementById('f-jpy').value)||0;
@@ -1375,12 +1427,60 @@ function saveProduct(id){
   save();closeModal();render();buildSidebarNav();
 }
 
-function showToast(msg){
-  const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(79,70,229,.4);font-weight:500';
-  t.textContent=msg;document.body.appendChild(t);
-  setTimeout(()=>t.remove(),2500);
+function toast(msg,opts){
+  opts=opts||{};
+  const kind=opts.kind||'';
+  const duration=opts.duration||(opts.actionLabel?4000:2000);
+  let box=document.getElementById('toasts');
+  if(!box){box=document.createElement('div');box.id='toasts';document.body.appendChild(box);}
+  const t=document.createElement('div');t.className='toast'+(kind?' '+kind:'');
+  const icon=kind==='ok'?'ti-circle-check':kind==='err'?'ti-alert-triangle':'ti-cloud';
+  t.innerHTML='<i class="ti '+icon+'"></i><span class="t-msg"></span>'+(opts.actionLabel?'<button class="t-act"></button>':'')+'<span class="t-bar"></span>';
+  t.querySelector('.t-msg').textContent=msg;
+  if(opts.actionLabel)t.querySelector('.t-act').textContent=opts.actionLabel;
+  box.appendChild(t);
+  const bar=t.querySelector('.t-bar');
+  bar.style.transition='transform '+duration+'ms linear';
+  requestAnimationFrame(()=>{bar.style.transform='scaleX(0)';});
+  let done=false;
+  const close=()=>{if(done)return;done=true;t.classList.add('out');setTimeout(()=>t.remove(),200);};
+  const timer=setTimeout(close,duration);
+  if(opts.actionLabel)t.querySelector('.t-act').onclick=()=>{clearTimeout(timer);if(opts.onAction)opts.onAction();close();};
+  return{close};
 }
+function showToast(msg){return toast(msg,{kind:'ok'});}
+function confirmDialog(msg,onYes,opts){
+  opts=opts||{};
+  const ov=document.createElement('div');ov.className='overlay';ov.style.zIndex='1000';
+  ov.innerHTML='<div class="confirm-box"><div class="confirm-msg"></div><div class="confirm-actions"><button class="btn confirm-cancel">ยกเลิก</button><button class="btn '+(opts.danger?'danger':'primary')+' confirm-ok"></button></div></div>';
+  ov.querySelector('.confirm-msg').textContent=msg;
+  ov.querySelector('.confirm-ok').textContent=opts.okLabel||'ตกลง';
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  ov.querySelector('.confirm-cancel').onclick=close;
+  ov.querySelector('.confirm-ok').onclick=()=>{close();if(onYes)onYes();};
+}
+function getHaptic(){const r=localStorage.getItem('jp2_haptic');return r===null?8:(+r||0);}
+function setHaptic(ms){
+  localStorage.setItem('jp2_haptic',String(ms));
+  document.querySelectorAll('#set-hap .theme-opt').forEach(el=>el.classList.toggle('sel',+el.dataset.ms===ms));
+  if(ms>0){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+}
+function haptic(){const ms=getHaptic();if(ms>0){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}}
+document.addEventListener('pointerdown',function(e){
+  const b=e.target.closest&&e.target.closest('.btn,.set-grad-btn,.pbuy,.pay-btn,.ch-opt,.pdone-undo');
+  if(!b)return;
+  if(!b.classList.contains('nohp'))haptic();
+  if(!b.matches('.set-grad-btn,.pbuy,.btn.primary'))return; // ripple เฉพาะปุ่มหลักทึบ ที่เหลือสั่นอย่างเดียว
+  const rect=b.getBoundingClientRect();
+  const size=Math.max(rect.width,rect.height);
+  const r=document.createElement('span');r.className='rpl';
+  r.style.width=r.style.height=size+'px';
+  r.style.left=(e.clientX-rect.left-size/2)+'px';
+  r.style.top=(e.clientY-rect.top-size/2)+'px';
+  b.appendChild(r);setTimeout(()=>r.remove(),520);
+});
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
 
 /* ══════════ ORDERS ══════════ */
@@ -1498,7 +1598,7 @@ function updateDepositHint(sell){
 function saveOrder(productId){
   const p=products.find(x=>x.id===productId);if(!p)return;
   const name=document.getElementById('o-name').value.trim();
-  if(!name){alert('กรุณาใส่ชื่อลูกค้า');return;}
+  if(!name){toast('กรุณาใส่ชื่อลูกค้า',{kind:'err'});return;}
   // size: from hidden field, or from the "อื่นๆ" type-in if it's showing
   let size=(document.getElementById('o-size')||{}).value||'';
   const other=document.getElementById('o-size-other');
@@ -1736,7 +1836,7 @@ function togglePurchased(orderId){
 function updateOrder(orderId){
   const o=orders.find(x=>String(x.id)===String(orderId));if(!o)return;
   const name=document.getElementById('oe-name').value.trim();
-  if(!name){alert('กรุณาใส่ชื่อลูกค้า');return;}
+  if(!name){toast('กรุณาใส่ชื่อลูกค้า',{kind:'err'});return;}
   o.customer=name;
   o.channel=orderChannelSel;
   o.size=document.getElementById('oe-size').value.trim();
@@ -1748,9 +1848,18 @@ function updateOrder(orderId){
   showToast('✓ บันทึกแล้ว');
 }
 function deleteOrder(orderId){
-  if(!confirm('ลบออเดอร์นี้?'))return;
-  orders=orders.filter(o=>String(o.id)!==String(orderId));
-  save();closeModal();renderOrders();buildSidebarNav();render();
+  const o0=orders.find(o=>String(o.id)===String(orderId));if(!o0)return;
+  const nm=o0.customer?('ของ '+o0.customer):'นี้';
+  confirmDialog('ลบออเดอร์ '+nm+' ?\nการลบจะมีผลกับทุกเครื่องที่ซิงค์',()=>{
+    const idx=orders.findIndex(o=>String(o.id)===String(orderId));if(idx<0)return;
+    const removed=orders[idx];
+    orders.splice(idx,1);
+    save();closeModal();renderOrders();buildSidebarNav();render();
+    toast('ลบออเดอร์แล้ว',{actionLabel:'เลิกทำ',duration:4000,onAction:()=>{
+      orders.splice(Math.min(idx,orders.length),0,removed);
+      save();renderOrders();buildSidebarNav();render();
+    }});
+  },{okLabel:'ลบ',danger:true});
 }
 
 applyTheme();buildSidebarNav();render();
