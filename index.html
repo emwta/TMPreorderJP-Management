@@ -114,6 +114,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 /* ── STATS ── colorful cards */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 1.25rem .875rem;flex-shrink:0}
 .stats-row-7{grid-template-columns:repeat(7,1fr)}
+#orders-stats.hidden{display:none}
 .stats-row-4{grid-template-columns:repeat(4,1fr)}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r16);padding:.875rem 1rem;position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--accent))}
@@ -431,7 +432,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
   <div class="logo"><i class="ti ti-plane-tilt"></i><span class="logo-text">Japan Pre-Order</span></div>
   <div class="search-wrap" style="margin-left:10px">
     <i class="ti ti-search"></i>
-    <input type="text" id="search-box" placeholder="ค้นหาสินค้า..." oninput="render()">
+    <input type="text" id="search-box" placeholder="ค้นหาสินค้า..." oninput="onSearchInput()">
     <button class="search-clear" tabindex="-1" aria-label="ล้างคำค้นหา" onclick="clearSearch('search-box')"><i class="ti ti-x"></i></button>
   </div>
   <div class="topnav-right">
@@ -566,6 +567,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
             <option value="deposit">มัดจำ</option>
             <option value="paid">จ่ายแล้ว</option>
           </select>
+          <button class="btn" id="stats-toggle" onclick="toggleOrdersStats()" title="ซ่อนสรุป" style="padding:0 10px"><i class="ti ti-eye"></i></button>
         </div>
       </div>
 
@@ -1093,6 +1095,8 @@ function setView(view){
   currentView=view;
   closeSidebar();
   const isOrderLike=(view==='orders'||view==='purchased');
+  const sb=document.getElementById('search-box');
+  if(sb)sb.placeholder=isOrderLike?'ค้นหาลูกค้า / สินค้า...':'ค้นหาสินค้า...';
   document.getElementById('view-products').style.display=view==='products'?'flex':'none';
   document.getElementById('view-orders').style.display=isOrderLike?'block':'none';
   document.getElementById('nav-orders').classList.toggle('active',view==='orders');
@@ -1108,6 +1112,10 @@ function setView(view){
     document.getElementById('sales-summary-wrap').style.display=isPur?'none':'';
     document.getElementById('orders-stats').classList.toggle('stats-row-7',!isPur);
     document.getElementById('orders-stats').classList.toggle('stats-row-4',isPur);
+    const sh=localStorage.getItem('jp2_ostats_hidden')==='1';
+    document.getElementById('orders-stats').classList.toggle('hidden',sh);
+    const stIc=document.querySelector('#stats-toggle i');if(stIc)stIc.className='ti '+(sh?'ti-eye-off':'ti-eye');
+    const stBtn=document.getElementById('stats-toggle');if(stBtn)stBtn.title=sh?'แสดงสรุป':'ซ่อนสรุป';
     renderOrders();
     applyCollapseState();
   }
@@ -1148,6 +1156,17 @@ function render(){
   const ps=document.getElementById('products-stats');
   if(ps)ps.classList.toggle('cat-hide',!!currentCat);
   document.getElementById('page-sub').textContent=`แสดง ${list.length} จาก ${products.length} รายการ`;
+}
+function onSearchInput(){
+  if(currentView==='products')render();
+  else renderOrders();
+}
+function toggleOrdersStats(){
+  const os=document.getElementById('orders-stats');
+  const hidden=os.classList.toggle('hidden');
+  localStorage.setItem('jp2_ostats_hidden',hidden?'1':'0');
+  const ic=document.querySelector('#stats-toggle i');if(ic)ic.className='ti '+(hidden?'ti-eye-off':'ti-eye');
+  const btn=document.getElementById('stats-toggle');if(btn)btn.title=hidden?'แสดงสรุป':'ซ่อนสรุป';
 }
 
 function orderCountFor(productId){return orders.filter(o=>o.productId===productId).length;}
@@ -1691,13 +1710,16 @@ function saveOrder(productId){
 function getFilteredOrders(){
   const ch=document.getElementById('order-channel-filter').value;
   const st=document.getElementById('order-status-filter').value;
-  const q=(document.getElementById('order-search').value||'').toLowerCase().trim();
+  const q1=(document.getElementById('order-search').value||'').toLowerCase().trim();
+  const q2=(document.getElementById('search-box').value||'').toLowerCase().trim();
   const wantPurchased=(currentView==='purchased');
   return orders.filter(o=>{
     if(!!o.purchased!==wantPurchased)return false;
     if(ch&&o.channel!==ch)return false;
     if(st&&o.status!==st)return false;
-    if(q&&!(o.customer||'').toLowerCase().includes(q))return false;
+    const hay=((o.customer||'')+' '+(o.productName||'')).toLowerCase();
+    if(q1&&!hay.includes(q1))return false;
+    if(q2&&!hay.includes(q2))return false;
     return true;
   }).slice().reverse();
 }
