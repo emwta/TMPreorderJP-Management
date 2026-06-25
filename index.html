@@ -86,6 +86,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .del-cat-btn{display:none;width:18px;height:18px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:11px;align-items:center;justify-content:center;border-radius:5px;flex-shrink:0;transition:.12s;margin-left:2px}
 .sidebar.managing .del-cat-btn{display:inline-flex}
 .del-cat-btn:hover{background:var(--red-bg);color:var(--red)}
+.cat-grip{display:none;color:var(--text3);font-size:17px;cursor:grab;touch-action:none;flex-shrink:0;margin-right:-2px}
+.sidebar.managing .cat-grip{display:inline-flex;align-items:center}
+.sidebar.managing .nav-item{cursor:default}
+.nav-item.dragging{opacity:.55;border:1px dashed var(--accent)!important;background:var(--accent-light)}
+.nav-item.drop-over{box-shadow:inset 0 2px 0 var(--accent)}
 .cat-sec-head{display:flex;align-items:center;justify-content:space-between}
 .manage-btn{width:22px;height:22px;padding:0;border:none;background:none;cursor:pointer;color:var(--text3);font-size:13px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;transition:.12s}
 .manage-btn:hover{background:var(--surface2);color:var(--text2)}
@@ -660,6 +665,22 @@ function getAllCats(){
   const custom=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
   const r={...BUILT_IN_CATS};custom.forEach(c=>{r[c.key]=c;});return r;
 }
+function getCatOrder(){try{return JSON.parse(localStorage.getItem('jp2_cat_order')||'[]')}catch(e){return[]}}
+function setCatOrder(arr){localStorage.setItem('jp2_cat_order',JSON.stringify(arr));schedulePush();}
+function orderedCatKeys(){
+  const all=Object.keys(getAllCats());
+  const ord=getCatOrder().filter(k=>all.includes(k));
+  all.forEach(k=>{if(!ord.includes(k))ord.push(k);}); // คีย์ที่ยังไม่อยู่ในลำดับ ต่อท้ายให้เอง
+  return ord;
+}
+function reorderCat(fromKey,toKey){
+  if(!fromKey||fromKey===toKey)return;
+  const ord=orderedCatKeys();
+  const fi=ord.indexOf(fromKey),ti=ord.indexOf(toKey);
+  if(fi<0||ti<0)return;
+  ord.splice(fi,1);ord.splice(ti,0,fromKey);
+  setCatOrder(ord);haptic();buildSidebarNav();render();
+}
 function saveCustomCat(key,label,hasSizes,icon){
   const custom=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
   if(!custom.find(c=>c.key===key)){
@@ -691,7 +712,7 @@ function deleteCustomCat(key){
   },{okLabel:'ลบ',danger:true});
 }
 function getCatColorClass(cat){
-  const known=['Shoes','Cosmatic','AcneStudio','Longchamp','HMM','Google'];
+  const known=['Shoes','HMM','Cosmatic','AcneStudio','Longchamp','Google'];
   return 'cat-color-'+(known.includes(cat)?cat:'default');
 }
 
@@ -715,7 +736,7 @@ function calcTaxFree(jpy){const{rate,tax}=getRates();return jpy*(1-tax/100)*rate
 function applyRatesToAll(silent){
   products.forEach(p=>{if(!p.jpy)return;p.taxfree=parseFloat(calcTaxFree(p.jpy).toFixed(2));p.profit=parseFloat((p.sell-p.taxfree).toFixed(2));});
   save();render();
-  if(!silent)showToast('✓ บันทึกอัตราและอัปเดตต้นทุนทุกรายการแล้ว');
+  if(!silent)showToast('✓ บันทึกอัตราและอัปเดตต้นทุนแล้ว');
 }
 function setRatePreview(){
   const el=document.getElementById('set-rate-preview');if(!el)return;
@@ -789,6 +810,10 @@ function applyPulled(d){
   if(d.settings&&d.settings[0]){
     if(d.settings[0].rate!=null)localStorage.setItem('jp2_rate',d.settings[0].rate);
     if(d.settings[0].tax!=null)localStorage.setItem('jp2_tax',d.settings[0].tax);
+    if(d.settings[0].order!=null){
+      try{const o=typeof d.settings[0].order==='string'?JSON.parse(d.settings[0].order):d.settings[0].order;
+        if(Array.isArray(o))localStorage.setItem('jp2_cat_order',JSON.stringify(o));}catch(e){}
+    }
   }
   reloadState();
 }
@@ -811,7 +836,7 @@ async function pushToSheet(){
       products:products,
       orders:orders,
       categories:JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]'),
-      settings:[{rate:getRates().rate,tax:getRates().tax}]
+      settings:[{rate:getRates().rate,tax:getRates().tax,order:JSON.stringify(getCatOrder())}]
     };
     await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:c.token,data})});
     lastPushAt=Date.now();
@@ -961,24 +986,22 @@ function toggleManage(){
 }
 
 function buildSidebarNav(){
-  const cats=getAllCats();const keys=Object.keys(cats);
+  const cats=getAllCats();const keys=orderedCatKeys();
   const customKeys=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]').map(c=>c.key);
   const onProd=currentView==='products';
   document.getElementById('sidebar-cats').innerHTML=keys.map(k=>{
     const isCustom=customKeys.includes(k);
     const del=isCustom
       ?`<span class="del-cat-btn" onclick="event.stopPropagation();deleteCustomCat('${k}')" title="ลบหมวด"><i class="ti ti-x"></i></span>`:'';
-    return`<div class="nav-item${onProd&&currentCat===k?' active':''}" id="nav-${k}" onclick="setCat('${k}')">
+    return`<div class="nav-item${onProd&&currentCat===k?' active':''}" id="nav-${k}" data-key="${k}" onclick="setCat('${k}')">
+      <span class="cat-grip"><i class="ti ti-grip-vertical"></i></span>
       <i class="ti ${cats[k].icon||'ti-tag'} cat-icon"></i>${cats[k].label}
       <span class="cnt" id="cnt-${k}">${products.filter(p=>p.cat===k).length}</span>${del}
     </div>`;
   }).join('');
   document.getElementById('nav-all').classList.toggle('active',onProd&&currentCat==='');
   const mb=document.getElementById('manage-cat-btn');
-  if(mb){
-    mb.style.display=customKeys.length?'':'none';
-    if(!customKeys.length){document.getElementById('sidebar').classList.remove('managing');mb.classList.remove('on');mb.innerHTML='<i class="ti ti-pencil"></i>';}
-  }
+  if(mb)mb.style.display='';
   document.getElementById('cnt-all').textContent=products.length;
   document.getElementById('cnt-orders').textContent=orders.filter(o=>!o.purchased).length;
   document.getElementById('cnt-purchased').textContent=orders.filter(o=>o.purchased).length;
@@ -987,6 +1010,44 @@ function buildSidebarNav(){
     `<button class="mob-nav-btn${currentView==='purchased'?' active':''}" onclick="setView('purchased')"><i class="ti ti-circle-check"></i>Purchased</button>`+
     `<button class="mob-nav-btn${currentView==='products'&&currentCat===''?' active':''}" onclick="setView('products');setCat('')"><i class="ti ti-layout-grid"></i>ทั้งหมด</button>`+
     keys.map(k=>`<button class="mob-nav-btn${currentView==='products'&&currentCat===k?' active':''}" onclick="setView('products');setCat('${k}')"><i class="ti ${cats[k].icon||'ti-tag'}"></i>${cats[k].label}</button>`).join('');
+  wireCatDrag();
+}
+function wireCatDrag(){
+  const host=document.getElementById('sidebar-cats');if(!host)return;
+  const managing=document.getElementById('sidebar').classList.contains('managing');
+  const items=[...host.querySelectorAll('.nav-item')];
+  items.forEach(it=>{
+    it.draggable=managing;
+    if(!managing)return;
+    it.ondragstart=e=>{it.classList.add('dragging');e.dataTransfer.setData('k',it.dataset.key);e.dataTransfer.effectAllowed='move';};
+    it.ondragend=()=>{it.classList.remove('dragging');items.forEach(x=>x.classList.remove('drop-over'));};
+    it.ondragover=e=>{e.preventDefault();it.classList.add('drop-over');};
+    it.ondragleave=()=>it.classList.remove('drop-over');
+    it.ondrop=e=>{e.preventDefault();reorderCat(e.dataTransfer.getData('k'),it.dataset.key);};
+    const grip=it.querySelector('.cat-grip');
+    if(grip)grip.addEventListener('touchstart',ev=>startCatTouch(ev,it,host),{passive:false});
+  });
+}
+function startCatTouch(e,it,host){
+  e.preventDefault();
+  const fromKey=it.dataset.key;it.classList.add('dragging');haptic();
+  const rowsNow=()=>[...host.querySelectorAll('.nav-item')];
+  const move=ev=>{
+    ev.preventDefault();
+    const y=ev.touches[0].clientY;
+    rowsNow().forEach(r=>r.classList.remove('drop-over'));
+    const tgt=rowsNow().find(r=>{const b=r.getBoundingClientRect();return y>=b.top&&y<=b.bottom;});
+    if(tgt)tgt.classList.add('drop-over');
+  };
+  const up=ev=>{
+    document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up);
+    const y=(ev.changedTouches[0]||{}).clientY;
+    const tgt=rowsNow().find(r=>{const b=r.getBoundingClientRect();return y>=b.top&&y<=b.bottom;});
+    it.classList.remove('dragging');rowsNow().forEach(r=>r.classList.remove('drop-over'));
+    if(tgt&&tgt.dataset.key!==fromKey)reorderCat(fromKey,tgt.dataset.key);
+  };
+  document.addEventListener('touchmove',move,{passive:false});
+  document.addEventListener('touchend',up);
 }
 
 function setSectionCollapsed(key,collapsed,animate){
@@ -1203,7 +1264,7 @@ function renderStats(){
 }
 function renderSidebar(){
   const oc=orderCountMap();
-  const cats=getAllCats();const keys=Object.keys(cats);
+  const cats=getAllCats();const keys=orderedCatKeys();
   const profits=keys.map(k=>Math.max(0,products.filter(p=>p.cat===k).reduce((s,p)=>s+p.profit*(oc[p.id]||0),0)));
   const maxP=Math.max(...profits,1);
   document.getElementById('cat-bars').innerHTML=keys.map((k,i)=>`
@@ -1241,7 +1302,7 @@ function openAddModal(){showProductModal(null);}
 function openEditModal(id){showProductModal(products.find(p=>p.id===id));}
 function getCatOptions(selected){
   const cats=getAllCats();
-  return Object.entries(cats).map(([k,v])=>`<option value="${k}"${selected===k?' selected':''}>${v.label}</option>`).join('')
+  return orderedCatKeys().map(k=>`<option value="${k}"${selected===k?' selected':''}>${cats[k].label}</option>`).join('')
     +`<option value="__new__">＋ เพิ่มหมวดหมู่ใหม่...</option>`;
 }
 
@@ -1850,7 +1911,7 @@ function updateOrder(orderId){
 function deleteOrder(orderId){
   const o0=orders.find(o=>String(o.id)===String(orderId));if(!o0)return;
   const nm=o0.customer?('ของ '+o0.customer):'นี้';
-  confirmDialog('ลบออเดอร์ '+nm+' ?\nการลบจะมีผลกับทุกเครื่องที่ซิงค์',()=>{
+  confirmDialog('ลบออเดอร์ '+nm+' ?\nการลบจะมีผลหลังจากบันทึกข้อมูล',()=>{
     const idx=orders.findIndex(o=>String(o.id)===String(orderId));if(idx<0)return;
     const removed=orders[idx];
     orders.splice(idx,1);
