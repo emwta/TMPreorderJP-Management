@@ -692,7 +692,7 @@ function deleteCustomCat(key){
   if(!custom0.find(c=>c.key===key))return;
   const cats=getAllCats();const lbl=cats[key]?cats[key].label:key;
   const cnt=products.filter(p=>p.cat===key).length;
-  confirmDialog('ลบหมวด "'+lbl+'" ?'+(cnt>0?'\nมีสินค้า '+cnt+' รายการในหมวดนี้':''),()=>{
+  confirmDialog('ต้องการลบหมวดหมู่ "'+lbl+'" ?'+(cnt>0?'\nมีสินค้า '+cnt+' รายการในหมวดนี้':''),()=>{
     const custom=JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]');
     const idx=custom.findIndex(c=>c.key===key);if(idx<0)return;
     const removed=custom[idx];
@@ -1302,7 +1302,7 @@ function renderSidebar(){
 function delProduct(id){
   const p0=products.find(p=>String(p.id)===String(id));if(!p0)return;
   const nm=p0.name||'สินค้านี้';
-  confirmDialog('ลบสินค้า "'+nm+'" ?\nการลบจะมีผลหลังจากบันทึกข้อมูล',()=>{
+  confirmDialog('ต้องการลบสินค้า "'+nm+'" ?\nการลบจะมีผลหลังจากบันทึกข้อมูล',()=>{
     const idx=products.findIndex(p=>String(p.id)===String(id));if(idx<0)return;
     const removed=products[idx];
     products.splice(idx,1);save();render();buildSidebarNav();closeModal();
@@ -1937,7 +1937,7 @@ function updateOrder(orderId){
 function deleteOrder(orderId){
   const o0=orders.find(o=>String(o.id)===String(orderId));if(!o0)return;
   const nm=o0.customer?('ของ '+o0.customer):'นี้';
-  confirmDialog('ลบออเดอร์ '+nm+' ?\nการลบจะมีผลหลังจากบันทึกข้อมูล',()=>{
+  confirmDialog('ต้องการลบออเดอร์ '+nm+' ?\nการลบจะมีผลหลังจากบันทึกข้อมูล',()=>{
     const idx=orders.findIndex(o=>String(o.id)===String(orderId));if(idx<0)return;
     const removed=orders[idx];
     orders.splice(idx,1);
