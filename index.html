@@ -251,7 +251,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .sec-body{overflow:hidden;transition:max-height .28s ease}
 .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;display:flex;gap:0;cursor:pointer;box-shadow:var(--shadow);transition:box-shadow .15s,transform .15s,border-color .15s;position:relative}
 .order-card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.order-thumb{width:68px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:8px;background:var(--surface);cursor:zoom-in}
+.order-thumb{width:68px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:5px;background:var(--surface);cursor:zoom-in}
 .order-thumb .o-plate{width:100%;height:100%;background:#fff;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);background-size:contain;background-position:center;background-repeat:no-repeat}
 .order-thumb-ph{width:68px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
 .order-body{flex:1;padding:11px 13px;min-width:0}
@@ -920,16 +920,16 @@ function openSettings(){
       </div>
     </div>
     <div class="set-card">
-      <div class="set-head"><div class="set-cic c2"><i class="ti ti-coin"></i></div><div class="set-ctt">อัตราแลกเปลี่ยน &amp; ภาษี<small>คำนวณต้นทุนจากเงินเยน</small></div></div>
+      <div class="set-head"><div class="set-cic c2"><i class="ti ti-coin"></i></div><div class="set-ctt">อัตราแลกเปลี่ยน &amp; TaxFree<small>คำนวณต้นทุนจากเงินเยน</small></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="set-label">¥1 = (บาท)</label><div class="input-icon"><i class="ti ti-coin"></i><input class="form-input" id="set-rate" type="number" step="0.001" min="0.001" value="${rate}" oninput="setRatePreview()"></div></div>
         <div><label class="set-label">Tax Free (%)</label><div class="input-icon"><i class="ti ti-receipt-tax"></i><input class="form-input" id="set-tax" type="number" step="0.1" min="0" max="30" value="${tax}" oninput="setRatePreview()"></div></div>
       </div>
       <div class="calc-hint" id="set-rate-preview" style="margin-top:8px"></div>
-      <button class="set-grad-btn" style="margin-top:10px" onclick="saveRatesFromSettings()"><i class="ti ti-device-floppy"></i>บันทึกอัตรา &amp; คำนวณใหม่</button>
+      <button class="set-grad-btn" style="margin-top:10px" onclick="saveRatesFromSettings()"><i class="ti ti-device-floppy"></i>บันทึก &amp; คำนวณใหม่</button>
     </div>
     <div class="set-card">
-      <div class="set-head"><div class="set-cic c3"><i class="ti ti-antenna-bars-3"></i></div><div class="set-ctt">การสั่น (Haptic)<small>แรงสั่นตอนกดปุ่ม</small></div></div>
+      <div class="set-head"><div class="set-cic c3"><i class="ti ti-device-mobile-code"></i></div><div class="set-ctt">การสั่น (Haptic)<small>แรงสั่นตอนกดปุ่ม</small></div></div>
       <div class="hap-grid" id="set-hap">
         <div class="theme-opt${hap===0?' sel':''}" data-ms="0" onclick="setHaptic(0)"><i class="ti ti-device-mobile-x"></i>ปิด</div>
         <div class="theme-opt${hap===8?' sel':''}" data-ms="8" onclick="setHaptic(8)"><i class="ti ti-device-mobile-star"></i>เบา</div>
