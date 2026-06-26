@@ -135,7 +135,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .prod-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
 .prod-table tbody tr:last-child td{border-bottom:none}
 .prod-table tbody tr:hover td{background:var(--surface2)}
-.prod-img{width:42px;height:42px;border-radius:var(--r8);object-fit:cover;border:2px solid var(--border);cursor:pointer;display:block;transition:.15s}
+.prod-img{width:42px;height:42px;border-radius:var(--r8);object-fit:contain;background:#fff;border:2px solid var(--border);cursor:pointer;display:block;transition:.15s}
 .prod-img:hover{transform:scale(1.08);box-shadow:var(--shadow-md)}
 .prod-img-ph{width:42px;height:42px;border-radius:var(--r8);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;background:var(--surface2);transition:.15s}
 .prod-img-ph:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
@@ -222,8 +222,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 /* 30:70 mobile card — full-height image left, info right (design A) */
 .m-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r16);overflow:hidden;box-shadow:var(--shadow);display:flex;gap:0;transition:box-shadow .18s,transform .18s}
 .m-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
-.m-cover{width:33%;flex-shrink:0;min-height:100%;background-size:contain;background-position:center;background-repeat:no-repeat;cursor:pointer;background-color:var(--img-bg)}
+.m-cover{width:33%;flex-shrink:0;min-height:100%;display:flex;align-items:center;justify-content:center;padding:9px;cursor:pointer;background:var(--surface)}
 .m-cover:active{opacity:.85}
+.m-plate{width:100%;height:100%;background:#fff;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);background-size:contain;background-position:center;background-repeat:no-repeat}
 .m-cover-ph{width:33%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-size:11px;font-weight:500}
 .m-cover-ph:active{opacity:.8}
 .m-cover-ph-icon{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:24px}
@@ -1223,7 +1224,7 @@ function renderMobileCards(list){
     const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const colorCls=getCatColorClass(p.cat);
     const coverHtml=p.img
-      ?`<div class="m-cover" style="background-image:url('${p.img.replace(/"/g,'&quot;').replace(/'/g,"%27")}')" onclick="viewImg('${esc(p.img)}')"></div>`
+      ?`<div class="m-cover" onclick="viewImg('${esc(p.img)}')"><div class="m-plate" style="background-image:url('${p.img.replace(/"/g,'&quot;').replace(/'/g,"%27")}')"></div></div>`
       :`<div class="m-cover-ph ${colorCls}" onclick="promptImg(${p.id})">
           <div class="m-cover-ph-icon"><i class="ti ${meta.icon||'ti-camera'}"></i></div>
           <span>เพิ่มรูป</span>
