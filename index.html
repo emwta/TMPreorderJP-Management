@@ -224,7 +224,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .m-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
 .m-cover{width:33%;flex-shrink:0;min-height:100%;display:flex;align-items:center;justify-content:center;padding:5px;cursor:pointer;background:var(--surface)}
 .m-cover:active{opacity:.85}
-.m-plate{width:100%;height:100%;background:#fff;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);background-size:contain;background-position:center;background-repeat:no-repeat}
+.m-plate{width:100%;height:100%;background:#fff;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.m-plate img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 .m-cover-ph{width:33%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-size:11px;font-weight:500}
 .m-cover-ph:active{opacity:.8}
 .m-cover-ph-icon{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:24px}
@@ -252,7 +253,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;display:flex;gap:0;cursor:pointer;box-shadow:var(--shadow);transition:box-shadow .15s,transform .15s,border-color .15s;position:relative}
 .order-card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .order-thumb{width:68px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:5px;background:var(--surface);cursor:zoom-in}
-.order-thumb .o-plate{width:100%;height:100%;background:#fff;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);background-size:contain;background-position:center;background-repeat:no-repeat}
+.order-thumb .o-plate{width:100%;height:100%;background:#fff;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.order-thumb .o-plate img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 .order-thumb-ph{width:68px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
 .order-body{flex:1;padding:11px 13px;min-width:0}
 .order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -660,11 +662,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 
 <script>
 const BUILT_IN_CATS={
-  Shoes:{label:"รองเท้า",icon:"ti-shoe",badge:"#1e2747|#93c5fd",hasSizes:true},
-  Cosmatic:{label:"เครื่องสำอาง",icon:"ti-sparkles",badge:"#2e1626|#f9a8d4",hasSizes:false},
+  Shoes:{label:"Shoes",icon:"ti-shoe",badge:"#1e2747|#93c5fd",hasSizes:true},
+  Cosmatic:{label:"Cosmetics",icon:"ti-sparkles",badge:"#2e1626|#f9a8d4",hasSizes:false},
   AcneStudio:{label:"Acne Studios",icon:"ti-hanger",badge:"#241a4a|#c4b5fd",hasSizes:true},
   Longchamp:{label:"Longchamp",icon:"ti-briefcase",badge:"#0f2e24|#6ee7b7",hasSizes:false},
-  HMM:{label:"HMM",icon:"ti-shirt",badge:"#2a2010|#fcd34d",hasSizes:true},
+  HMM:{label:"HMM",icon:"ti-heart",badge:"#2a2010|#fcd34d",hasSizes:true},
   Google:{label:"Google / Fitbit",icon:"ti-device-watch",badge:"#0f2e24|#6ee7b7",hasSizes:false}
 };
 const CLOTHING_SIZES=["XXS","XS","S","M","L","XL","2XL","3XL"];
@@ -1221,7 +1223,7 @@ function renderTable(list){
     const meta=cats[p.cat]||{hasSizes:false,label:p.cat};
     const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const imgHtml=p.img
-      ?`<img src="${p.img.replace(/"/g,'&quot;')}" class="prod-img" onclick="viewImg('${esc(p.img)}')">`
+      ?`<img loading="lazy" decoding="async" src="${p.img.replace(/"/g,'&quot;')}" class="prod-img" onclick="viewImg('${esc(p.img)}')">`
       :`<div class="prod-img-ph" onclick="promptImg(${p.id})"><i class="ti ti-camera" style="font-size:15px"></i></div>`;
     const tpHtml=tp>0?`<span class="${p.profit>=0?'tp-pos':'tp-neg'}">฿${tp.toLocaleString()}</span>`:'<span style="color:var(--text3)">—</span>';
     const soldHtml=sold>0?`<span style="font-weight:600;color:var(--accent-text)">${sold} ชิ้น</span>`:'<span style="color:var(--text3)">—</span>';
@@ -1255,7 +1257,7 @@ function renderMobileCards(list){
     const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const colorCls=getCatColorClass(p.cat);
     const coverHtml=p.img
-      ?`<div class="m-cover" onclick="viewImg('${esc(p.img)}')"><div class="m-plate" style="background-image:url('${p.img.replace(/"/g,'&quot;').replace(/'/g,"%27")}')"></div></div>`
+      ?`<div class="m-cover" onclick="viewImg('${esc(p.img)}')"><div class="m-plate"><img loading="lazy" decoding="async" src="${p.img.replace(/"/g,'&quot;').replace(/'/g,"%27")}" alt=""></div></div>`
       :`<div class="m-cover-ph ${colorCls}" onclick="promptImg(${p.id})">
           <div class="m-cover-ph-icon"><i class="ti ${meta.icon||'ti-camera'}"></i></div>
           <span>เพิ่มรูป</span>
@@ -1805,7 +1807,7 @@ function renderOrders(){
     const ch=CHANNELS[o.channel]||{label:o.channel,icon:'ti-user',cls:'ch-personal'};
     const esc=s=>String(s).replace(/'/g,"%27");
     const thumb=o.img
-      ?`<div class="order-thumb" onclick="event.stopPropagation();viewImg('${esc(o.img)}')"><div class="o-plate" style="background-image:url('${esc(o.img)}')"></div></div>`
+      ?`<div class="order-thumb" onclick="event.stopPropagation();viewImg('${esc(o.img)}')"><div class="o-plate"><img loading="lazy" decoding="async" src="${esc(o.img)}" alt=""></div></div>`
       :`<div class="order-thumb-ph ${getCatColorClass(o.cat)}"><i class="ti ${meta.icon}"></i></div>`;
     const bal=Math.max(0,o.sell-(o.deposit||0));
     const owe=o.status!=='paid'&&bal>0;
@@ -1857,7 +1859,7 @@ function renderSalesSummary(){
     const meta=cats[r.cat]||{label:r.cat,icon:'ti-package'};
     const esc=s=>String(s).replace(/'/g,"%27");
     const thumb=r.img
-      ?`<div style="width:42px;height:42px;border-radius:9px;background:#fff url('${esc(r.img)}') center/contain no-repeat;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);flex-shrink:0"></div>`
+      ?`<div style="width:42px;height:42px;border-radius:9px;background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden"><img loading="lazy" decoding="async" src="${esc(r.img)}" style="max-width:100%;max-height:100%;object-fit:contain;display:block"></div>`
       :`<div class="${getCatColorClass(r.cat)}" style="width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${meta.icon}" style="font-size:20px"></i></div>`;
     return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:8px 8px;display:flex;align-items:center;gap:12px">
       ${thumb}
