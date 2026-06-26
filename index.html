@@ -1439,11 +1439,11 @@ function showProductModal(p){
     <div class="form-group-label"><i class="ti ti-cash-banknote"></i>การขาย</div>
     <div class="form-2col">
       <div class="form-row">
-        <label>ราคาขายลูกค้า</span></label>
+        <label>ราคาขายลูกค้า (฿)</span></label>
         <input class="form-input" id="f-sell" type="number" value="${p?p.sell:''}" oninput="modalAutoCalc()" style="border-color:var(--accent)">
       </div>
       <div class="form-row">
-        <label>ราคาขายในไทย</span></label>
+        <label>ราคาขายในไทย (฿)</span></label>
         <input class="form-input" id="f-thb" type="number" value="${p?p.thb:''}">
       </div>
     </div>
