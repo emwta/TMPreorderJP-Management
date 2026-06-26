@@ -1859,7 +1859,7 @@ function renderSalesSummary(){
     const thumb=r.img
       ?`<div style="width:42px;height:42px;border-radius:9px;background:#fff url('${esc(r.img)}') center/contain no-repeat;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);flex-shrink:0"></div>`
       :`<div class="${getCatColorClass(r.cat)}" style="width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${meta.icon}" style="font-size:20px"></i></div>`;
-    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:11px 13px;display:flex;align-items:center;gap:12px">
+    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:8px 8px;display:flex;align-items:center;gap:12px">
       ${thumb}
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:13px;color:var(--text)">${r.name}</div>
