@@ -141,6 +141,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sa
 .prod-img-ph:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
 .prod-name{font-weight:600;color:var(--text)}
 .prod-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.thb-diff{font-size:.86em;font-weight:600;color:var(--text3);margin-left:5px;white-space:nowrap}
 .badge{display:inline-flex;align-items:center;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
 
 /* price cells */
@@ -752,6 +753,12 @@ const CHANNELS={
 
 function getRates(){return{rate:parseFloat(localStorage.getItem('jp2_rate')||'0.230'),tax:parseFloat(localStorage.getItem('jp2_tax')||'8')};}
 function calcTaxFree(jpy){const{rate,tax}=getRates();return jpy*(1-tax/100)*rate;}
+// ส่วนต่าง: ราคาขายในไทย − ราคาขายลูกค้า (โชว์เฉพาะเมื่อกรอกราคาไทย และถูกกว่าจริง)
+function thbDiffStr(p){
+  const thb=Number(p.thb)||0,sell=Number(p.sell)||0,diff=thb-sell;
+  if(thb<=0||diff<=0)return '';
+  return `<span class="thb-diff">(${diff.toLocaleString()})</span>`;
+}
 function applyRatesToAll(silent){
   products.forEach(p=>{if(!p.jpy)return;p.taxfree=parseFloat(calcTaxFree(p.jpy).toFixed(2));p.profit=parseFloat((p.sell-p.taxfree).toFixed(2));});
   save();render();
@@ -1229,7 +1236,7 @@ function renderTable(list){
     const soldHtml=sold>0?`<span style="font-weight:600;color:var(--accent-text)">${sold} ชิ้น</span>`:'<span style="color:var(--text3)">—</span>';
     return`<tr>
       <td>${imgHtml}</td>
-      <td><div class="prod-name">${p.name}</div><div class="prod-sub">¥${p.jpy.toLocaleString()} / ฿${p.thb.toLocaleString()}</div></td>
+      <td><div class="prod-name">${p.name}</div><div class="prod-sub">¥${p.jpy.toLocaleString()} / ฿${p.thb.toLocaleString()}${thbDiffStr(p)}</div></td>
       <td><span class="badge ${getCatColorClass(p.cat)}">${meta.label}</span></td>
       <td class="cell-sell">฿${p.sell.toLocaleString()}</td>
       <td class="cell-cost">฿${Math.round(p.taxfree).toLocaleString()}</td>
@@ -1274,7 +1281,7 @@ function renderMobileCards(list){
         </div>
         <div class="m-card-meta">
           <span class="badge ${getCatColorClass(p.cat)}" style="font-size:10px;padding:2px 9px">${meta.label}</span>
-          <span style="font-size:11px;color:var(--text3)">¥${p.jpy.toLocaleString()} / ฿${p.thb.toLocaleString()}</span>
+          <span style="font-size:11px;color:var(--text3)">¥${p.jpy.toLocaleString()} / ฿${p.thb.toLocaleString()}${thbDiffStr(p)}</span>
         </div>
         <div class="m-price-row">
           <div>
