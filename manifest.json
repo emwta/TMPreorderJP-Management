@@ -1,0 +1,24 @@
+{
+  "name": "JP Pre-Order",
+  "short_name": "JP Order",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0f20",
+  "theme_color": "#0c0f20",
+  "icons": [
+    {
+      "src": "fc192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "fc512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
