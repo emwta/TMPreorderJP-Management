@@ -1,6 +1,6 @@
 {
-  "name": "JP Pre-Order",
-  "short_name": "JP Order",
+  "name": "TM-JPPre-Order",
+  "short_name": "TMPreOrder",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
