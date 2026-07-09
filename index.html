@@ -739,7 +739,7 @@ body{font-family:'Noto Sans Thai',-apple-system,BlinkMacSystemFont,'Segoe UI',sa
 <script>
 const BUILT_IN_CATS={
   Shoes:{label:"Shoes",icon:"ti-shoe",badge:"#1e2747|#93c5fd",hasSizes:true},
-  Cosmatic:{label:"Cosmetics",icon:"ti-sparkles",badge:"#2e1626|#f9a8d4",hasSizes:false},
+  Cosmetics:{label:"Cosmetics",icon:"ti-sparkles",badge:"#2e1626|#f9a8d4",hasSizes:false},
   AcneStudio:{label:"Acne Studios",icon:"ti-hanger",badge:"#241a4a|#c4b5fd",hasSizes:true},
   Longchamp:{label:"Longchamp",icon:"ti-briefcase",badge:"#0f2e24|#6ee7b7",hasSizes:false},
   HMM:{label:"HMM",icon:"ti-heart",badge:"#2a2010|#fcd34d",hasSizes:true},
@@ -810,7 +810,7 @@ function deleteCustomCat(key){
   },{okLabel:'ลบ',danger:true});
 }
 function getCatColorClass(cat){
-  const known=['Shoes','HMM','Cosmatic','AcneStudio','Longchamp','Google'];
+  const known=['Shoes','HMM','Cosmetics','AcneStudio','Longchamp','Google'];
   return 'cat-color-'+(known.includes(cat)?cat:'default');
 }
 
