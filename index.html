@@ -832,6 +832,7 @@ const CHANNELS={
 
 function getRates(){return{rate:parseFloat(localStorage.getItem('jp2_rate')||'0.230'),tax:parseFloat(localStorage.getItem('jp2_tax')||'8')};}
 function calcTaxFree(jpy){const{rate,tax}=getRates();return jpy*(1-tax/100)*rate;}
+function calcNoTax(jpy){return jpy*getRates().rate;}
 // ส่วนต่าง: ราคาขายในไทย − ราคาขายลูกค้า (โชว์เฉพาะเมื่อกรอกราคาไทย และถูกกว่าจริง)
 function thbDiffStr(p){
   const thb=Number(p.thb)||0,sell=Number(p.sell)||0,diff=thb-sell;
@@ -844,7 +845,7 @@ function fixImgUrl(u){
   return u.split('?')[0]+'?w=800&h=800&fit=fill&f=center&fm=webp&q=80';
 }
 function applyRatesToAll(silent){
-  products.forEach(p=>{if(!p.jpy)return;p.taxfree=parseFloat(calcTaxFree(p.jpy).toFixed(2));p.profit=parseFloat((p.sell-p.taxfree).toFixed(2));});
+  products.forEach(p=>{if(!p.jpy)return;p.taxfree=parseFloat((p.noTaxFree?calcNoTax(p.jpy):calcTaxFree(p.jpy)).toFixed(2));p.profit=parseFloat((p.sell-p.taxfree).toFixed(2));});
   save();render();
   if(!silent)showToast('✓ บันทึกอัตราและอัปเดตต้นทุนแล้ว');
 }
@@ -1609,7 +1610,7 @@ function showProductModal(p){
       <button class="btn primary" onclick="saveProduct(${isEdit?p.id:'null'})">${isEdit?'บันทึก':'เพิ่มสินค้า'}</button>
     </div>
   </div></div>`;
-  if(p&&p.noTaxFree)toggleNoTaxFree();
+  if(p&&p.noTaxFree)toggleNoTaxFree(true);
   else if(p&&p.jpy)updateCalcHint(p.jpy);
 }
 
@@ -1626,24 +1627,30 @@ function selectSizeType(st){
   document.querySelectorAll('#sizetype-seg .seg-btn').forEach(el=>el.classList.toggle('active',el.dataset.st===st));
 }
 function modalOnJPY(){
-  if(document.getElementById('f-no-taxfree').checked)return; // manual mode, don't auto-calc
+  const noTF=document.getElementById('f-no-taxfree').checked;
   const jpy=parseFloat(document.getElementById('f-jpy').value)||0;
-  if(jpy>0){document.getElementById('f-taxfree').value=calcTaxFree(jpy).toFixed(2);updateCalcHint(jpy);}
+  if(jpy>0){document.getElementById('f-taxfree').value=(noTF?calcNoTax(jpy):calcTaxFree(jpy)).toFixed(2);updateCalcHint(jpy);}
   modalAutoCalc();
 }
 function updateCalcHint(jpy){
-  const{rate,tax}=getRates();const tf=calcTaxFree(jpy);
+  const{rate,tax}=getRates();
+  const noTF=document.getElementById('f-no-taxfree').checked;
+  const tf=noTF?calcNoTax(jpy):calcTaxFree(jpy);
   const hint=document.getElementById('calc-hint'),htxt=document.getElementById('calc-hint-text');
-  if(hint&&htxt){hint.style.display='flex';htxt.textContent=`(¥${jpy.toLocaleString()} − ${tax}%) × ${rate} = ฿${Math.round(tf).toLocaleString()} · คำนวณอัตโนมัติ`;}
+  if(hint&&htxt){hint.style.display='flex';htxt.textContent=noTF
+    ?`¥${jpy.toLocaleString()} × ${rate} = ฿${Math.round(tf).toLocaleString()} · ไม่หัก tax free (แก้เองได้)`
+    :`(¥${jpy.toLocaleString()} − ${tax}%) × ${rate} = ฿${Math.round(tf).toLocaleString()} · คำนวณอัตโนมัติ`;}
 }
-function toggleNoTaxFree(){
+function toggleNoTaxFree(keepVal){
   const cb=document.getElementById('f-no-taxfree').checked;
   const tf=document.getElementById('f-taxfree');
   const hint=document.getElementById('calc-hint');
+  const jpy0=parseFloat(document.getElementById('f-jpy').value)||0;
   if(cb){
     tf.removeAttribute('readonly');
     tf.style.background='var(--surface)';tf.style.color='var(--text)';
-    hint.style.display='none';
+    if(jpy0>0){if(!keepVal)tf.value=calcNoTax(jpy0).toFixed(2);updateCalcHint(jpy0);}
+    else hint.style.display='none';
   }else{
     tf.setAttribute('readonly','');
     tf.style.background='var(--surface2)';tf.style.color='var(--text2)';
