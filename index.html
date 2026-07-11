@@ -9,9 +9,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="JP Order">
 
-<script>
+<script>/* โหลดฟอนต์/ไอคอนจาก CDN ตอนใช้งาน ไม่ฝังในไฟล์ */
 ["https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css",
  "https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap"].forEach(function(u){var l=document.createElement("link");l.rel="stylesheet";l.href=u;document.head.appendChild(l);});
+/* favicon: เรียกไฟล์ fcs512.png ข้างไฟล์ HTML โดยตรง (ไม่ฝัง base64) */
 [["icon","fcs512.png"],["apple-touch-icon","fcs512.png"],["manifest","manifest.json"]].forEach(function(p){var l=document.createElement("link");l.rel=p[0];l.href=p[1];document.head.appendChild(l);});</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -582,7 +583,7 @@ body{font-family:'Noto Sans Thai',-apple-system,BlinkMacSystemFont,'Segoe UI',sa
         <div class="stat-card-icon"><i class="ti ti-shopping-cart"></i></div>
         <div class="stat-val" id="s-ordered">0</div>
         <div class="stat-label">มีออเดอร์</div>
-        <div class="stat-sub">รายการที่สั่ง</div>
+        <div class="stat-sub" id="s-ordered-from">รายการที่สั่ง</div>
       </div>
       <div class="stat-card" style="--card-color:#fbbf24;--card-bg:#2a2010">
         <div class="stat-card-icon"><i class="ti ti-coin"></i></div>
@@ -1431,7 +1432,8 @@ function renderStats(){
   const profit=products.reduce((s,p)=>s+p.profit*(oc[p.id]||0),0);
   const ordered=products.filter(p=>(oc[p.id]||0)>0).length;
   document.getElementById('s-total').textContent=products.length;
-  document.getElementById('s-ordered').textContent=ordered;
+  document.getElementById('s-ordered').textContent=orders.length;
+  document.getElementById('s-ordered-from').textContent=orders.length?`รายการ · จาก ${ordered} สินค้า`:'รายการที่สั่ง';
   document.getElementById('s-cost').textContent='฿'+Math.round(cost).toLocaleString();
   document.getElementById('s-profit').textContent='฿'+Math.round(profit).toLocaleString();
   document.getElementById('s-ordered-sub').textContent=`${products.length} รายการทั้งหมด`;
