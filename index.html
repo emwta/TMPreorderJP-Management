@@ -9,10 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="JP Order">
 
-<script>/* โหลดฟอนต์/ไอคอนจาก CDN ตอนใช้งาน ไม่ฝังในไฟล์ */
+<script>
 ["https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css",
  "https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap"].forEach(function(u){var l=document.createElement("link");l.rel="stylesheet";l.href=u;document.head.appendChild(l);});
-/* favicon: เรียกไฟล์ fcs512.png ข้างไฟล์ HTML โดยตรง (ไม่ฝัง base64) */
 [["icon","fcs512.png"],["apple-touch-icon","fcs512.png"],["manifest","manifest.json"]].forEach(function(p){var l=document.createElement("link");l.rel=p[0];l.href=p[1];document.head.appendChild(l);});</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -882,7 +881,7 @@ function quickTheme(){setTheme(getTheme()==='dark'?'light':'dark');haptic();}
 
 /* ── SETTINGS MODAL ── */
 /* ── GOOGLE SHEET SYNC ── */
-let pushTimer=null,syncPoll=null,lastPushAt=0,pendingPush=false,firstPullDone=false;
+let pushTimer=null,syncPoll=null,lastPushAt=0,pendingPush=false,firstPullDone=false,pushing=false;
 const DEFAULT_SYNC_URL='https://script.google.com/macros/s/AKfycbw054qIcABR9cMTr3jgs9savDBlITmViDIsR0VO1RsGTZc44ULGEgFuE8nzQ6YiOYktCg/exec'; // <<< แก้ตรงนี้: วาง Web App URL ที่ลงท้าย /exec
 const DEFAULT_SYNC_TOKEN='TMPreoderJapan2n'; // <<< แก้ตรงนี้: ใส่ Token เดียวกับใน Apps Script (ฝังไว้เพื่อให้เปิดครั้งแรก sync เลย)
 function syncCfg(){return{url:localStorage.getItem('jp2_sync_url')||DEFAULT_SYNC_URL,token:localStorage.getItem('jp2_sync_token')||DEFAULT_SYNC_TOKEN};}
@@ -956,6 +955,7 @@ async function pushToSheet(){
     return;
   }
   setSyncIndicator('syncing');
+  pushing=true;
   try{
     const data={
       products:products,
@@ -963,28 +963,37 @@ async function pushToSheet(){
       categories:JSON.parse(localStorage.getItem('jp2_custom_cats')||'[]'),
       settings:[{rate:getRates().rate,tax:getRates().tax,order:JSON.stringify(getCatOrder())}]
     };
-    await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:c.token,data})});
+    const res=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:c.token,data})});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const d=await res.json();
+    if(d.error||!d.ok)throw new Error(d.error||'sheet did not confirm');
     lastPushAt=Date.now();
     pendingPush=false;
     setSyncStatus('บันทึกขึ้น Sheet แล้ว '+new Date().toLocaleTimeString('th-TH'),'ok');
-  }catch(e){setSyncStatus('ส่งข้อมูลไม่ได้','err');}  // คง pendingPush ไว้ กันดึงทับข้อมูลที่ยังไม่ sync
+  }catch(e){setSyncStatus('บันทึกขึ้น Sheet ไม่สำเร็จ จะลองใหม่อัตโนมัติ','err');}  // คง pendingPush ไว้ → รอบ poll ถัดไป retry เอง
+  finally{pushing=false;}
 }
 function schedulePush(){
   if(!syncEnabled())return;
   if(!firstPullDone)return;               // ยังไม่ดึงข้อมูลล่าสุด อย่าเพิ่ง queue push (กันเขียนทับตอนเปิดแอพ)
   pendingPush=true;                       // มีการแก้ข้อมูลในเครื่อง ยังไม่ขึ้น Sheet
   clearTimeout(pushTimer);
-  pushTimer=setTimeout(pushToSheet,1200);
+  pushTimer=setTimeout(()=>{pushTimer=null;pushToSheet();},1200);
 }
 function startSyncPolling(){
   clearInterval(syncPoll);
   if(!syncEnabled())return;
   syncPoll=setInterval(()=>{
     if(document.getElementById('modal-root').innerHTML.trim()!=='')return; // ไม่ดึงทับระหว่างเปิด modal
-    if(firstPullDone&&pendingPush){pushToSheet();return;}                   // มีของแก้ค้างอยู่ → push ก่อน (เฉพาะหลัง pull แรก)
+    if(firstPullDone&&pendingPush){if(!pushing)pushToSheet();return;}                   // มีของแก้ค้างอยู่ → push ก่อน (เฉพาะหลัง pull แรก)
     if(Date.now()-lastPushAt<3000)return;                                   // เพิ่งพุชไป ข้ามรอบนี้
     const c=syncCfg();if(!c.url||!c.token)return;
-    fetch(c.url+'?token='+encodeURIComponent(c.token)).then(r=>r.json()).then(d=>{if(!d.error){applyPulled(d);firstPullDone=true;}}).catch(()=>{});
+    fetch(c.url+'?token='+encodeURIComponent(c.token)).then(r=>r.json()).then(d=>{
+      // เช็คซ้ำตอน response มาถึง — ระหว่างรอ fetch อาจมีการแก้ข้อมูล/กำลัง push อยู่ ห้ามทับ
+      if(pendingPush||pushing||pushTimer!==null)return;
+      if(document.getElementById('modal-root').innerHTML.trim()!=='')return;
+      if(!d.error){applyPulled(d);firstPullDone=true;}
+    }).catch(()=>{});
   },12000);
 }
 async function saveSyncCfg(){
